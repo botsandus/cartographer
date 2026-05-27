@@ -16,6 +16,14 @@ cmake_minimum_required(VERSION 3.5)
 
 project(cartographer)
 
+# Newer Abseil exposes thread-safety annotations with ABSL_* names.
+# Cartographer still uses legacy names in headers.
+add_compile_definitions(
+  LOCKS_EXCLUDED=ABSL_LOCKS_EXCLUDED
+  GUARDED_BY=ABSL_GUARDED_BY
+  EXCLUSIVE_LOCKS_REQUIRED=ABSL_EXCLUSIVE_LOCKS_REQUIRED
+)
+
 set(CARTOGRAPHER_MAJOR_VERSION 1)
 set(CARTOGRAPHER_MINOR_VERSION 0)
 set(CARTOGRAPHER_PATCH_VERSION 0)
