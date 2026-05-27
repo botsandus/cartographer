@@ -16,6 +16,13 @@ cmake_minimum_required(VERSION 3.5)
 
 project(cartographer)
 
+# Compatibility shim: newer Abseil only defines ABSL_*-prefixed thread
+# annotation macros; Cartographer's source still uses the legacy unprefixed
+# names. Force-include a header that maps the old names onto the new ones.
+if(NOT MSVC)
+  add_compile_options(-include "${CMAKE_CURRENT_SOURCE_DIR}/cartographer/common/absl_thread_annotations_compat.h")
+endif()
+
 set(CARTOGRAPHER_MAJOR_VERSION 1)
 set(CARTOGRAPHER_MINOR_VERSION 0)
 set(CARTOGRAPHER_PATCH_VERSION 0)
