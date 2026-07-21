@@ -82,14 +82,13 @@ void ConstraintBuilder2D::MaybeAddConstraint(
       options_.max_constraint_distance()) {
     return;
   }
+  absl::MutexLock locker(&mutex_);
   if (!per_submap_sampler_
            .emplace(std::piecewise_construct, std::forward_as_tuple(submap_id),
                     std::forward_as_tuple(options_.sampling_ratio()))
            .first->second.Pulse()) {
     return;
   }
-
-  absl::MutexLock locker(&mutex_);
   if (when_done_) {
     LOG(WARNING)
         << "MaybeAddConstraint was called while WhenDone was scheduled.";
@@ -172,13 +171,19 @@ ConstraintBuilder2D::DispatchScanMatcherConstruction(const SubmapId& submap_id,
   auto& submap_scan_matcher = submap_scan_matchers_[submap_id];
   kNumSubmapScanMatchersMetric->Set(submap_scan_matchers_.size());
   submap_scan_matcher.grid = grid;
+  const Grid2D* const grid_ptr = grid;
   auto& scan_matcher_options = options_.fast_correlative_scan_matcher_options();
   auto scan_matcher_task = absl::make_unique<common::Task>();
   scan_matcher_task->SetWorkItem(
-      [&submap_scan_matcher, &scan_matcher_options]() {
-        submap_scan_matcher.fast_correlative_scan_matcher =
+      [this, submap_id, grid_ptr, &scan_matcher_options]() {
+        auto matcher =
             absl::make_unique<scan_matching::FastCorrelativeScanMatcher2D>(
-                *submap_scan_matcher.grid, scan_matcher_options);
+                *grid_ptr, scan_matcher_options);
+        absl::MutexLock locker(&mutex_);
+        auto it = submap_scan_matchers_.find(submap_id);
+        if (it != submap_scan_matchers_.end()) {
+          it->second.fast_correlative_scan_matcher = std::move(matcher);
+        }
       });
   submap_scan_matcher.creation_task_handle =
       thread_pool_->Schedule(std::move(scan_matcher_task));

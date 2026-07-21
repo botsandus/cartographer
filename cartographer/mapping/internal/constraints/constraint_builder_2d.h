@@ -161,7 +161,8 @@ class ConstraintBuilder2D {
   // Map of dispatched or constructed scan matchers by 'submap_id'.
   std::map<SubmapId, SubmapScanMatcher> submap_scan_matchers_
       ABSL_GUARDED_BY(mutex_);
-  std::map<SubmapId, common::FixedRatioSampler> per_submap_sampler_;
+  std::map<SubmapId, common::FixedRatioSampler> per_submap_sampler_
+      ABSL_GUARDED_BY(mutex_);
 
   scan_matching::CeresScanMatcher2D ceres_scan_matcher_;
 
